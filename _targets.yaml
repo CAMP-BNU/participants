@@ -7,3 +7,6 @@
 20211213:
   script: 20211213.R
   store: _targets/20211213
+20211217:
+  script: 20211217.R
+  store: _targets/20211217
