@@ -1,17 +1,13 @@
 library(targets)
-tar_option_set(packages = "tidyverse")
+tar_option_set(packages = c("tidyverse", "bit64", "tarflow.iquizoo"))
+tar_source()
+# used by `str_glue()`, might not be best practice
 school_name <- "天津师范大学"
 list(
-  tar_target(
-    user_sql_tmpl,
-    "sql/users_from_school_tmpl.sql",
-    format = "file"
-  ),
-  tar_target(
+  tarchetypes::tar_file_read(
     users_existed,
-    read_file(user_sql_tmpl) |>
-      str_glue() |>
-      tarflow.iquizoo::pickup() |>
+    "sql/users_from_school_tmpl.sql",
+    read = pickup_glue(!!.x) |>
       mutate(user_dob = as.character(user_dob)),
     cue = tar_cue("always")
   ),
@@ -37,6 +33,42 @@ list(
   tar_target(
     file_unmatched,
     writexl::write_xlsx(subjs_unmatched, "tjnu/unmatched.xlsx"),
+    format = "file"
+  ),
+  tarchetypes::tar_file_read(
+    users_progress,
+    "sql/project_progress_tmpl.sql",
+    read = pickup_glue(!!.x)
+  ),
+  tar_target(
+    users_obsolete,
+    users_progress |>
+      filter(str_detect(project_name, "弃"), project_progress > 0) |>
+      pull(user_id)
+  ),
+  tarchetypes::tar_file_read(
+    user_course_codes,
+    "sql/course_codes_tmpl.sql",
+    read = pickup_glue(!!.x)
+  ),
+  tar_target(
+    course_codes_valid,
+    user_course_codes |>
+      filter(!str_detect(课程, "弃")) |>
+      filter(!user_id %in% users_obsolete) |>
+      select(-user_id)
+  ),
+  tar_target(
+    file_course_codes,
+    course_codes_valid |>
+      mutate(
+        参与须知 = str_glue(
+          "欢迎参与实验！",
+          "您本次实验课程码为：“{课程码}”。"
+        ),
+        .keep = "unused"
+      ) |>
+      writexl::write_xlsx("tjnu/课程码.xlsx"),
     format = "file"
   )
 )

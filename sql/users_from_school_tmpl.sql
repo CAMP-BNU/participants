@@ -8,7 +8,8 @@ SELECT DISTINCT
   	WHEN 2 THEN '女'
   	ELSE '未知'
 	END user_sex,
-	v_organizationuser.Birthday user_dob
+	v_organizationuser.Birthday user_dob,
+	v_organizationuser.Mobile user_phone
 FROM
 	iquizoo_content_db.v_organizationuser
 WHERE
