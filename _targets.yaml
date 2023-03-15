@@ -1,12 +1,3 @@
-20211126:
-  script: 20211126.R
-  store: _targets/20211126
-20211203:
-  script: 20211203.R
-  store: _targets/20211203
-20211213:
-  script: 20211213.R
-  store: _targets/20211213
-20211217:
-  script: 20211217.R
-  store: _targets/20211217
+tjnu:
+  script: _targets_tjnu.R
+  store: _targets/tjnu
