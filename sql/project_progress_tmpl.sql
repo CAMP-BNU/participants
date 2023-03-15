@@ -1,5 +1,5 @@
 SELECT
-  vo.OrganizationId user_id,
+  vo.OrganizationUserId user_id,
   vo.OrganizationName school,
   pcc.Name project_name,
   pcu.Progress project_progress
