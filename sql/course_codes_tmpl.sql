@@ -1,7 +1,7 @@
 SELECT
   vo.OrganizationUserId user_id,
+  pcc.`Name` 项目名称,
   c.`Name` 课程资源,
-  pcc.`Name` 课程,
   vo.GradeName 分级,
   vo.ClassName 分班,
   vo.RealName 姓名,

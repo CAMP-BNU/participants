@@ -12,17 +12,26 @@ list(
     cue = tar_cue("always")
   ),
   tarchetypes::tar_file_read(
-    subjs_from_tencent,
+    subjs_signed_current,
     "tjnu/校外被试信息收集.xlsx",
     read = readxl::read_excel(!!.x)
   ),
   tar_target(
+    subjs_signed,
+    subjs_signed_current |>
+      filter(
+        row_number(desc(`提交时间（自动）`)) == 1,
+        .by = `QQ号（必填）`
+      )
+  ),
+  tar_target(
     subjs_cols_corrected,
-    subjs_from_tencent |>
+    subjs_signed |>
       mutate(
         user_name = str_extract(`姓名（必填）`, "[\\p{Han}]+"),
         user_sex = `性别（必填）`,
-        user_dob = as.character(`生日（必填）`)
+        user_dob = as.character(`生日（必填）`),
+        user_phone = `手机号（必填）`
       )
   ),
   tar_target(
@@ -49,12 +58,13 @@ list(
   tarchetypes::tar_file_read(
     user_course_codes,
     "sql/course_codes_tmpl.sql",
-    read = pickup_glue(!!.x)
+    read = pickup_glue(!!.x),
+    cue = tar_cue(mode = "always")
   ),
   tar_target(
     course_codes_valid,
     user_course_codes |>
-      filter(!str_detect(课程, "弃")) |>
+      filter(!str_detect(项目名称, "弃")) |>
       filter(!user_id %in% users_obsolete) |>
       select(-user_id)
   ),
@@ -68,6 +78,7 @@ list(
         ),
         .keep = "unused"
       ) |>
+      group_split(项目名称) |>
       writexl::write_xlsx("tjnu/课程码.xlsx"),
     format = "file"
   )
