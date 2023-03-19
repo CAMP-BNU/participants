@@ -1,3 +1,6 @@
 tjnu:
   script: _targets_tjnu.R
   store: _targets/tjnu
+sicnu:
+  script: _targets_sicnu.R
+  store: _targets/sicnu

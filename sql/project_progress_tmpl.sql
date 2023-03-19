@@ -2,6 +2,7 @@ SELECT
   vo.OrganizationUserId user_id,
   vo.OrganizationName school,
   pcc.Name project_name,
+  pcu.UpdateTime project_update_time,
   pcu.Progress project_progress
 FROM
   iquizoo_content_db.project_course_user pcu
