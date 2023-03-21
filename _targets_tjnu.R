@@ -64,7 +64,7 @@ list(
   tar_target(
     course_codes_valid,
     user_course_codes |>
-      filter(!str_detect(项目名称, "弃")) |>
+      filter(!str_detect(项目名称, "弃"), str_detect(项目名称, "认知实验")) |>
       filter(!user_id %in% users_obsolete) |>
       select(-user_id)
   ),
