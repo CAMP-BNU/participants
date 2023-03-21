@@ -77,11 +77,11 @@ list(
     course_codes_valid |>
       mutate(
         参与须知 = str_glue(
-          "欢迎参与实验！",
-          "您本次实验课程码为：“{课程码}”。"
-        ),
-        .keep = "unused"
+          "欢迎参与{项目名称}！",
+          "课程码为：“{课程码}”。"
+        )
       ) |>
+      select(-课程码) |>
       group_split(项目名称) |>
       writexl::write_xlsx("sicnu/课程码.xlsx"),
     format = "file"
