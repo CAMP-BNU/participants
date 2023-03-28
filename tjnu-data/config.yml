@@ -15,3 +15,6 @@ default:
     - table: v_organizationuser
       field: OrganizationName
       values: 天津师范大学
+    - table: course
+      field: Name
+      values: [认知实验A, 认知实验B, 认知实验C, 认知实验D, 认知实验E]

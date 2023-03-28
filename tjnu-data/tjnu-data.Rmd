@@ -35,12 +35,6 @@ targets_data <- tarchetypes::tar_map(
   # tar_target(scores, pickup(query_tmpl_scores, config_where_single_game)),
   tar_target(data, pickup(query_tmpl_data, config_where_single_game)),
   tar_target(data_parsed, wrangle_data(data)),
-  tar_target(
-    indices,
-    if (!is.na(prep_fun_name)) {
-      preproc_data(data_parsed, prep_fun, .input = input, .extra = extra)
-    }
-  ),
   # configurations
   tar_target(
     config_where_single_game,
@@ -72,13 +66,15 @@ list(
     data_parsed,
     targets_data$data_parsed
   ),
-  tarchetypes::tar_combine(
-    indices,
-    targets_data$indices
+  tarchetypes::tar_file_read(
+    progress,
+    "sql/progress.sql",
+    read = pickup(!!.x)
   )
 )
 ```
 
 ```{r run-pipeline, include=FALSE}
+# tar_destroy()
 tar_make_future(workers = 8)
 ```

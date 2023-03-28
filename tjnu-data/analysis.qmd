@@ -1,8 +1,14 @@
+---
+title: "Screen fmri users for TJNU"
+---
+
 ```{r}
 #| label: setup
 #| include: false
 
 library(tidyverse)
+requireNamespace("bit64")
+source("../R/utils-data.R")
 ```
 
 # Rule of selection
@@ -11,7 +17,7 @@ library(tidyverse)
 * No outliers
 
 ```{r}
-targets::tar_load(c(users, indices, data_parsed_PIQ))
+targets::tar_load(c(users, data_parsed, data_parsed_PIQ, progress))
 users_bmi_check <- data_parsed_PIQ |>
   mutate(
     map(
@@ -24,21 +30,26 @@ users_bmi_check <- data_parsed_PIQ |>
     .keep = "unused"
   ) |>
   filter(bmi < 22)
-indices_check <- indices |>
-  filter(!any(str_detect(project_name, "弃")), .by = user_id) |>
-  semi_join(
-    read_csv("config/game_indices.csv", show_col_types = F) |>
-      filter(selected),
-    by = join_by(game_name, index_name)
-  ) |>
+config <- read_csv("../config/fmri-screen.csv", show_col_types = F)
+check_result_raw <- data_parsed |> 
+  left_join(config, by = "game_name") |> 
+  filter(!is.na(method)) |> 
   mutate(
-    is_outlier = performance::check_outliers(score, method = "iqr") |> unclass(),
-    .by = c(game_name, index_name)
-  ) |>
-  filter(!any(is_outlier), .by = user_id)
+    passed = pmap_dbl(
+      list(data = raw_parsed, game_name, method, chance),
+      check_raw
+    )
+  )
+raw_data_check <- check_result_raw |> 
+  summarise(n_fail = sum(!passed), .by = user_id) |> 
+  filter(n_fail <= 2)
+progress_check <- progress |> 
+  summarise(n = sum(progress) / 100, .by = user_id) |> 
+  filter(n > 1)
 users |>
+  # semi_join(progress_check, by = "user_id") |>
   semi_join(users_bmi_check, by = "user_id") |>
-  semi_join(indices_check, by = "user_id") |>
+  semi_join(raw_data_check, by = "user_id") |>
   select(user_name, user_phone) |>
   writexl::write_xlsx("output/fmri_users_sel.xlsx")
 ```
