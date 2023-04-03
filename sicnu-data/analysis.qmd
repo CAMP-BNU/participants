@@ -24,8 +24,8 @@ check_result_raw <- data_parsed |>
     )
   )
 raw_data_check <- check_result_raw |>
-  summarise(n_fail = sum(!passed), .by = user_id) |>
-  filter(n_fail <= 2)
+  summarise(n_fail = sum(!passed), n = n(), .by = user_id) |>
+  filter(n_fail / n < 0.1)
 progress_check <- progress |>
   summarise(n = sum(progress) / 100, .by = user_id) |>
   filter(n > 1)
