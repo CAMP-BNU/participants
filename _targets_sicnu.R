@@ -47,7 +47,8 @@ list(
   tarchetypes::tar_file_read(
     users_progress,
     "sql/project_progress_tmpl.sql",
-    read = pickup_glue(!!.x)
+    read = pickup_glue(!!.x),
+    cue = tar_cue("always")
   ),
   tar_target(
     users_obsolete,
@@ -84,6 +85,35 @@ list(
       select(-课程码) |>
       group_split(项目名称) |>
       writexl::write_xlsx("sicnu/课程码.xlsx"),
+    format = "file"
+  ),
+  tar_target(
+    users_progress_valid,
+    users_existed |>
+      inner_join(
+        users_progress |>
+          filter(str_detect(project_name, "^认知实验[A-E]$")) |>
+          summarise(
+            n = sum(project_progress) / 100,
+            missed = str_c(
+              project_name[project_progress < 100],
+              collapse = ","
+            ),
+            .by = user_id
+          ),
+        by = "user_id"
+      ) |>
+      filter(!user_id %in% users_obsolete) |>
+      select(
+        姓名 = user_name,
+        性别 = user_sex,
+        完成比例 = n,
+        缺失的实验 = missed
+      )
+  ),
+  tar_target(
+    file_progress,
+    writexl::write_xlsx(users_progress_valid, "sicnu/progress.xlsx"),
     format = "file"
   )
 )
