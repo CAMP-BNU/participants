@@ -1,5 +1,5 @@
-pickup_glue <- function(file) {
+pickup_glue <- function(file, ...) {
   read_file(file) |>
-    str_glue() |>
+    str_glue(...) |>
     pickup()
 }

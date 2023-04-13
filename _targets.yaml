@@ -4,3 +4,6 @@ tjnu:
 sicnu:
   script: _targets_sicnu.R
   store: _targets/sicnu
+pku:
+  script: _targets_pku.R
+  store: _targets/pku
