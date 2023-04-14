@@ -72,6 +72,15 @@ list(
     writexl::write_xlsx(subjs_unmatched, "pku/unmatched.xlsx"),
     format = "file"
   ),
+  tar_target(
+    file_unmatched_tmpl,
+    prepare_template_users(
+      subjs_unmatched,
+      grade = "2304级",
+      class = "1班",
+      out_dir = "pku"
+    )
+  ),
   tarchetypes::tar_file_read(
     user_course_codes,
     "sql/course_codes_tmpl.sql",
@@ -85,7 +94,7 @@ list(
   ),
   tar_target(
     file_course_codes,
-    prepare_files_course_codes(course_codes_valid, "pku"),
+    prepare_template_course_codes(course_codes_valid, "pku"),
     format = "file"
   ),
   tarchetypes::tar_file_read(
