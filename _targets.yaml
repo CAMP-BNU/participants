@@ -7,3 +7,6 @@ sicnu:
 pku:
   script: _targets_pku.R
   store: _targets/pku
+buu:
+  script: _targets_buu.R
+  store: _targets/buu

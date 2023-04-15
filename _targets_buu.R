@@ -3,8 +3,8 @@ tar_option_set(
   packages = c("tidyverse", "bit64", "tarflow.iquizoo", "openxlsx")
 )
 tar_source()
-school_name <- "北京大学"
-school_name_en <- "pku"
+school_name <- "北京联合大学"
+school_name_en <- "buu"
 list(
   tarchetypes::tar_file_read(
     users_existed,
