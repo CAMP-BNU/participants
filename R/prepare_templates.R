@@ -1,8 +1,8 @@
 prepare_template_course_codes <- function(course_codes_valid, out_dir) {
   projects <- unique(course_codes_valid$项目名称)
-  wb <- loadWorkbook(here::here("tools/名单模板.xlsx"))
   files <- str_glue("{out_dir}/名单模板_{projects}.xlsx")
   for (i in seq_along(projects)) {
+    wb <- loadWorkbook(here::here("tools/名单模板.xlsx"))
     course_codes <- course_codes_valid |>
       filter(项目名称 == projects[[i]]) |>
       mutate(
