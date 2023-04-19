@@ -18,6 +18,7 @@ targets::tar_unscript()
 ```
 
 ```{targets set-globals, tar_globals=TRUE, include=FALSE}
+purrr::walk(fs::dir_ls(here::here("R")), source)
 future::plan(future.callr::callr)
 search_games_mem <- memoise::memoise(
   tarflow.iquizoo::search_games,
@@ -25,7 +26,7 @@ search_games_mem <- memoise::memoise(
 )
 games <- search_games_mem(config_where = config::get("where"))
 tar_option_set(
-  package = c("tidyverse", "preproc.iquizoo", "tarflow.iquizoo"),
+  package = c("tidyverse", "preproc.iquizoo", "tarflow.iquizoo", "openxlsx"),
   format = "qs",
   imports = "preproc.iquizoo"
 )
@@ -46,7 +47,8 @@ targets_data <- tarchetypes::tar_map(
 ```{targets load-config, include=FALSE}
 list(
   tar_target(file_config, "config.yml", format = "file"),
-  tar_target(config_where, config::get("where", file = file_config))
+  tar_target(config_where, config::get("where", file = file_config)),
+  tar_target(games_req_kb, config::get("require_keyboard"))
 )
 ```
 
@@ -70,6 +72,53 @@ list(
     users_project_progress,
     fs::path("sql", "progress.tmpl.sql"),
     read = pickup(!!.x, config_where)
+  )
+)
+```
+
+```{targets prepare-makup, include=FALSE}
+list(
+  tar_target(
+    makeup_details,
+    users_project_progress |>
+      summarise(n = sum(project_progress) / 100, .by = user_id) |>
+      filter(n >= 4) |>
+      left_join(data_parsed, by = "user_id") |>
+      mutate(
+        used_mouse = map2_lgl(
+          raw_parsed, game_name,
+          check_used_mouse
+        )
+      ) |>
+      filter(game_name %in% games_req_kb, used_mouse) |>
+      select(user_id, game_name) |>
+      left_join(users, by = "user_id") |>
+      mutate(user_sex = c("男", "女")[user_sex]) |>
+      summarise(
+        n = n(),
+        games_make_up = str_c(game_name, collapse = ", "),
+        .by = c(user_id, user_name, user_sex, user_dob, user_phone)
+      )
+  ),
+  tar_target(
+    file_makeup_details,
+    makeup_details |> 
+      select(
+        姓名 = user_name,
+        性别 = user_sex,
+        生日 = user_dob,
+        补测任务数目 = n,
+        补测任务列表 = games_make_up
+      ) |> 
+      writexl::write_xlsx("makeup/details.xlsx"),
+    format = "file"
+  ),
+  tar_target(
+    file_users_makeup,
+    makeup_details |> 
+      select(姓名 = user_name, 手机号码 = user_phone) |> 
+      writexl::write_xlsx("makeup/users.xlsx"),
+    format = "file"
   )
 )
 ```
