@@ -1,0 +1,48 @@
+---
+title: Prepare for Keyboard Makeup
+author: Liang Zhang
+---
+
+```{r}
+#| label: setup
+#| include: false
+
+library(tidyverse)
+source(here::here("R/utils-data.R"))
+requireNamespace("bit64")
+games_req_kb <- config::get("require_keyboard")
+targets::tar_load(data_parsed)
+targets::tar_load(users)
+targets::tar_load(users_project_progress)
+```
+
+```{r}
+users_makeup_pool <- users_project_progress |>
+  summarise(n = sum(project_progress) / 100, .by = user_id) |>
+  filter(n >= 4)
+users_makeup_pool |>
+  left_join(data_parsed, by = "user_id") |>
+  mutate(
+    used_mouse = map2_lgl(
+      raw_parsed, game_name,
+      check_used_mouse
+    )
+  ) |>
+  filter(game_name %in% games_req_kb, used_mouse) |>
+  select(user_id, game_name) |>
+  left_join(users, by = "user_id") |>
+  mutate(user_sex = c("男", "女")[user_sex]) |>
+  summarise(
+    n = n(),
+    games_make_up = str_c(game_name, collapse = ", "),
+    .by = c(user_name, user_sex, user_dob)
+  ) |>
+  select(
+    姓名 = user_name,
+    性别 = user_sex,
+    生日 = user_dob,
+    补测任务数目 = n,
+    补测任务列表 = games_make_up
+  ) |>
+  writexl::write_xlsx("output/makeup.xlsx")
+```

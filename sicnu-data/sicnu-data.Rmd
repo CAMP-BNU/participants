@@ -67,9 +67,9 @@ list(
     targets_data$data_parsed
   ),
   tarchetypes::tar_file_read(
-    progress,
-    "sql/progress.sql",
-    read = pickup(!!.x)
+    users_project_progress,
+    fs::path("sql", "progress.tmpl.sql"),
+    read = pickup(!!.x, config_where)
   )
 )
 ```

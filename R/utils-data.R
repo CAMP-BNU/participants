@@ -18,3 +18,19 @@ check_raw <- function(data, game_name, method, chance, ...) {
     return(mean(data$rt < chance) < 0.1)
   }
 }
+check_used_mouse <- function(raw_parsed, game_name) {
+  if (!has_name(raw_parsed, "device")) {
+    return(TRUE)
+  }
+  if (game_name %in% c("注意警觉", "注意指向")) {
+    raw_parsed$device <- if_else(
+      raw_parsed$resp == "right",
+      "keyboard",
+      raw_parsed$device
+    )
+  }
+  raw_parsed$device |>
+    str_c(collapse = "-") |>
+    str_split("-") |>
+    map_lgl(~ any(.x == "mouse"))
+}
