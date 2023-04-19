@@ -1,6 +1,6 @@
 prepare_template_course_codes <- function(course_codes_valid, out_dir) {
   projects <- unique(course_codes_valid$项目名称)
-  wb <- loadWorkbook("tools/名单模板.xlsx")
+  wb <- loadWorkbook(here::here("tools/名单模板.xlsx"))
   files <- str_glue("{out_dir}/名单模板_{projects}.xlsx")
   for (i in seq_along(projects)) {
     course_codes <- course_codes_valid |>
@@ -26,7 +26,7 @@ prepare_template_users <- function(users, grade, class, out_dir) {
     out_dir,
     str_c("批量导入学生模板_", as.character(now(), "%Y%m%d_%H%M%S"), ".xlsx")
   )
-  wb <- loadWorkbook("tools/批量导入学生模板.xlsx")
+  wb <- loadWorkbook(here::here("tools/批量导入学生模板.xlsx"))
   data_users <- users |>
     transmute(
       姓名 = user_name,

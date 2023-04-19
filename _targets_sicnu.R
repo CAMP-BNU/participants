@@ -82,12 +82,23 @@ list(
     read = pickup_glue(!!.x),
     cue = tar_cue(mode = "always")
   ),
+  tarchetypes::tar_file_read(
+    makeup_details,
+    "sicnu-data/_targets/objects/makeup_details",
+    read = qs::qread(!!.x)
+  ),
   tar_target(
     course_codes_valid,
-    user_course_codes |>
-      filter(str_detect(项目名称, "认知实验")) |>
-      filter(!user_id %in% users_obsolete) |>
-      select(-user_id)
+    bind_rows(
+      user_course_codes |>
+        filter(str_detect(项目名称, "认知实验")) |>
+        filter(!user_id %in% users_obsolete) |>
+        select(-user_id),
+      user_course_codes |>
+        filter(项目名称 == "CAMP-补测专用") |>
+        semi_join(makeup_details, by = "user_id") |>
+        select(-user_id)
+    )
   ),
   tar_target(
     file_course_codes,
