@@ -4,6 +4,7 @@ title: "Screen fmri users for SICNU"
 
 ```{r}
 #| label: setup
+#| include: false
 
 library(tidyverse)
 source("../R/utils-data.R")
@@ -25,14 +26,14 @@ check_result_raw <- data_parsed |>
   )
 raw_data_check <- check_result_raw |>
   summarise(n_fail = sum(!passed), n = n(), .by = user_id) |>
-  filter(n_fail / n <= 0.1)
+  filter(n_fail / n <= 0.15)
 progress_check <- progress |>
   summarise(n = sum(progress) / 100, .by = user_id) |>
-  filter(n >= 3)
+  filter(n == 5)
 users |>
+  filter(user_sex == 1) |> 
   semi_join(progress_check, by = "user_id") |>
   semi_join(raw_data_check, by = "user_id") |>
-  anti_join(black, by = "user_name") |>
   select(user_name, user_phone) |>
   writexl::write_xlsx("output/fmri_users_sel.xlsx")
 ```
