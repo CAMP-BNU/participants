@@ -1,8 +1,11 @@
 library(targets)
-tar_option_set(packages = c("tidyverse", "bit64", "tarflow.iquizoo"))
+tar_option_set(
+  packages = c("tidyverse", "bit64", "tarflow.iquizoo", "openxlsx")
+)
 tar_source()
 # used by `str_glue()`, might not be best practice
 school_name <- "天津师范大学"
+school_name_en <- "tjnu"
 list(
   tarchetypes::tar_file_read(
     users_existed,
@@ -22,7 +25,8 @@ list(
       filter(
         row_number(desc(`提交时间（自动）`)) == 1,
         .by = `QQ号（必填）`
-      )
+      ) |>
+      filter(`性别（必填）` == "男")
   ),
   tar_target(
     subjs_cols_corrected,
@@ -43,6 +47,15 @@ list(
     file_unmatched,
     writexl::write_xlsx(subjs_unmatched, "tjnu/unmatched.xlsx"),
     format = "file"
+  ),
+  tar_target(
+    file_unmatched_tmpl,
+    prepare_template_users(
+      subjs_unmatched,
+      grade = "2304级",
+      class = "1班",
+      out_dir = school_name_en
+    )
   ),
   tarchetypes::tar_file_read(
     users_progress,
@@ -71,16 +84,7 @@ list(
   ),
   tar_target(
     file_course_codes,
-    course_codes_valid |>
-      mutate(
-        参与须知 = str_glue(
-          "欢迎参与{项目名称}！",
-          "课程码为：“{课程码}”。"
-        )
-      ) |>
-      select(-课程码) |>
-      group_split(项目名称) |>
-      writexl::write_xlsx("tjnu/课程码.xlsx"),
+    prepare_template_course_codes(course_codes_valid, school_name_en),
     format = "file"
   ),
   tar_target(
