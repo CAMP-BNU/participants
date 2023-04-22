@@ -24,7 +24,7 @@ prepare_template_course_codes <- function(course_codes_valid, out_dir) {
 prepare_template_users <- function(users, grade, class, out_dir) {
   file <- fs::path(
     out_dir,
-    str_c("批量导入学生模板_", as.character(now(), "%Y%m%d_%H%M%S"), ".xlsx")
+    str_c("批量导入学生模板_", format(now(), "%Y%m%d_%H%M%S"), ".xlsx")
   )
   wb <- loadWorkbook(here::here("tools/批量导入学生模板.xlsx"))
   data_users <- users |>
