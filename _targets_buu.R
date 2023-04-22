@@ -27,7 +27,8 @@ list(
       filter(
         row_number(desc(`提交时间（自动）`)) == 1,
         .by = `QQ号（必填）`
-      )
+      ) |>
+      filter(`性别（必填）` == "男")
   ),
   tar_target(
     subjs_cols_corrected,
