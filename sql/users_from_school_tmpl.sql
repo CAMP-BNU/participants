@@ -1,5 +1,6 @@
 SELECT DISTINCT
   v_organizationuser.OrganizationUserId user_id,
+  v_organizationuser.GradeName batch,
   v_organizationuser.RealName user_name,
   CASE v_organizationuser.Gender
     WHEN 1 THEN '男'
