@@ -27,8 +27,7 @@ list(
       filter(
         row_number(desc(`提交时间（自动）`)) == 1,
         .by = `QQ号（必填）`
-      ) |>
-      filter(`性别（必填）` == "男")
+      )
   ),
   tar_target(
     subjs_cols_corrected,
@@ -70,6 +69,7 @@ list(
   tar_target(
     subjs_unmatched,
     subjs_cols_corrected |>
+      filter(`性别（必填）` == "男") |>
       anti_join(users_existed, by = join_by(user_name, user_sex, user_dob)) |>
       anti_join(users_obsolete, by = join_by(user_name, user_sex, user_dob))
   ),
