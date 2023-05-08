@@ -23,22 +23,30 @@ default:
   - 注意指向
   - 方向检测
   - 色彩检测
-  # put all the required where filters here
+
+base:
   where:
-    # examples (you should make sure these filters are valid):
-    # - table: course
-    #   field: Name
-    #   operator: REGEXP
-    #   values: .*
-    # - table: content
-    #   field: Name
-    # # operator of `=` or `IN` can be neglected
-    #   values:
-    #   - 萤火虫
-    #   - 超级秒表
-    - table: v_organizationuser
-      field: OrganizationName
-      values: 四川师范大学
-    - table: course
-      field: Name
-      values: [认知实验A, 认知实验B, 认知实验C, 认知实验D, 认知实验E]
+  - table: v_organizationuser
+    field: OrganizationName
+    values: 四川师范大学
+  - table: course
+    field: Name
+    values: [认知实验A, 认知实验B, 认知实验C, 认知实验D, 认知实验E]
+
+makeup:
+  where:
+  - table: v_organizationuser
+    field: OrganizationName
+    values: 四川师范大学
+  - table: project_course_config
+    field: Name
+    values: CAMP-补测（键盘）
+
+makeup2:
+  where:
+  - table: v_organizationuser
+    field: OrganizationName
+    values: 四川师范大学
+  - table: project_course_config
+    field: Name
+    values: CAMP-补测（键盘）2

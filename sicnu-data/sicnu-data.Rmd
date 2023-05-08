@@ -18,18 +18,17 @@ targets::tar_unscript()
 ```
 
 ```{targets set-globals, tar_globals=TRUE, include=FALSE}
+tar_option_set(
+  package = c("tidyverse", "tarflow.iquizoo"),
+  format = "qs",
+  controller = crew::crew_controller_local(workers = 8)
+)
 purrr::walk(fs::dir_ls(here::here("R")), source)
-future::plan(future.callr::callr)
 search_games_mem <- memoise::memoise(
   tarflow.iquizoo::search_games,
   cache = cachem::cache_disk("~/.cache.tarflow")
 )
-games <- search_games_mem(config_where = config::get("where"))
-tar_option_set(
-  package = c("tidyverse", "preproc.iquizoo", "tarflow.iquizoo", "openxlsx"),
-  format = "qs",
-  imports = "preproc.iquizoo"
-)
+games <- search_games_mem(config_where = config::get("where", config = "base"))
 targets_data <- tarchetypes::tar_map(
   values = games,
   names = game_name_abbr,
@@ -42,13 +41,40 @@ targets_data <- tarchetypes::tar_map(
     insert_where_single_game(config_where, game_id)
   )
 )
+
+games_makeup <- search_games_mem(config_where = config::get("where", config = "makeup"))
+targets_data_makeup <- tarchetypes::tar_map(
+  values = games_makeup,
+  names = game_name_abbr,
+  # major targets
+  tar_target(data_makeup, pickup(query_tmpl_data, config_where_single_game_makeup)),
+  tar_target(data_parsed_makeup, wrangle_data(data_makeup)),
+  # configurations
+  tar_target(
+    config_where_single_game_makeup,
+    insert_where_single_game(config_where_makeup, game_id)
+  )
+)
+
+games_makeup2 <- search_games_mem(config_where = config::get("where", config = "makeup2"))
+targets_data_makeup2 <- tarchetypes::tar_map(
+  values = games_makeup2,
+  names = game_name_abbr,
+  # major targets
+  tar_target(data_makeup2, pickup(query_tmpl_data, config_where_single_game_makeup2)),
+  tar_target(data_parsed_makeup2, wrangle_data(data_makeup2)),
+  # configurations
+  tar_target(
+    config_where_single_game_makeup2,
+    insert_where_single_game(config_where_makeup2, game_id)
+  )
+)
 ```
 
 ```{targets load-config, include=FALSE}
 list(
   tar_target(file_config, "config.yml", format = "file"),
-  tar_target(config_where, config::get("where", file = file_config)),
-  tar_target(games_req_kb, config::get("require_keyboard"))
+  tar_target(games_req_kb, config::get("require_keyboard", file = file_config))
 )
 ```
 
@@ -59,10 +85,10 @@ list(
 )
 ```
 
-```{targets data-and-scores, include=FALSE}
+```{targets data-base, include=FALSE}
 list(
-  tar_target(query_tmpl_scores, fs::path("sql", "scores.tmpl.sql"), format = "file"),
   tar_target(query_tmpl_data, fs::path("sql", "data.tmpl.sql"), format = "file"),
+  tar_target(config_where, config::get("where", file = file_config, config = "base")),
   targets_data,
   tarchetypes::tar_combine(
     data_parsed,
@@ -72,6 +98,38 @@ list(
     users_project_progress,
     fs::path("sql", "progress.tmpl.sql"),
     read = pickup(!!.x, config_where)
+  )
+)
+```
+
+```{targets data-makeup, include=FALSE}
+list(
+  tar_target(config_where_makeup, config::get("where", file = file_config, config = "makeup")),
+  targets_data_makeup,
+  tarchetypes::tar_combine(
+    data_parsed_makeup,
+    targets_data_makeup$data_parsed_makeup
+  ),
+  tarchetypes::tar_file_read(
+    users_project_progress_makeup,
+    fs::path("sql", "progress.tmpl.sql"),
+    read = pickup(!!.x, config_where_makeup)
+  )
+)
+```
+
+```{targets data-makeup-2, include=FALSE}
+list(
+  tar_target(config_where_makeup2, config::get("where", file = file_config, config = "makeup2")),
+  targets_data_makeup2,
+  tarchetypes::tar_combine(
+    data_parsed_makeup2,
+    targets_data_makeup2$data_parsed_makeup2
+  ),
+  tarchetypes::tar_file_read(
+    users_project_progress_makeup2,
+    fs::path("sql", "progress.tmpl.sql"),
+    read = pickup(!!.x, config_where_makeup2)
   )
 )
 ```
@@ -91,18 +149,17 @@ list(
         )
       ) |>
       filter(game_name %in% games_req_kb, used_mouse) |>
-      select(user_id, game_name) |>
-      left_join(users, by = "user_id") |>
-      mutate(user_sex = c("男", "女")[user_sex]) |>
-      summarise(
-        n = n(),
-        games_make_up = str_c(game_name, collapse = ", "),
-        .by = c(user_id, user_name, user_sex, user_dob, user_phone)
-      )
+      select(user_id, game_name) |> 
+      chop(game_name)
   ),
   tar_target(
     file_makeup_details,
-    makeup_details |> 
+    makeup_details |>
+      left_join(users, by = "user_id") |>
+      mutate(
+        n = lengths(game_name),
+        games_make_up = map_chr(game_name, ~ str_c(., collapse = ", "))
+      ) |> 
       select(
         姓名 = user_name,
         性别 = user_sex,
@@ -116,6 +173,7 @@ list(
   tar_target(
     file_users_makeup,
     makeup_details |> 
+      left_join(users, by = "user_id") |> 
       select(姓名 = user_name, 手机号码 = user_phone) |> 
       writexl::write_xlsx("makeup/users.xlsx"),
     format = "file"
@@ -123,7 +181,88 @@ list(
 )
 ```
 
+```{targets prepare-makeup-2, include=FALSE}
+list(
+  tar_target(
+    makeup_validation,
+    data_parsed_makeup |>
+      filter(course_name == "CAMP-补测专用") |> 
+      filter(game_time == max(game_time), .by = c(user_id, game_id)) |>
+      mutate(
+        used_mouse = map2_lgl(
+          raw_parsed, game_name,
+          check_used_mouse
+        )
+      )
+  ),
+  tar_target(
+    makeup_completion,
+    makeup_validation |> 
+      filter(game_name %in% games_req_kb & !used_mouse) |> 
+      select(user_id, game_name_makeup = game_name) |> 
+      chop(game_name_makeup) |> 
+      full_join(makeup_details, by = "user_id") |> 
+      mutate(
+        leftover = map2(game_name, game_name_makeup, setdiff),
+        .keep = "unused"
+      )
+  ),
+  tar_target(
+    file_details_leftover,
+    makeup_completion |> 
+      filter(lengths(leftover) > 0) |> 
+      left_join(users, by = "user_id") |>
+      mutate(
+        n = lengths(leftover),
+        games_make_up = map_chr(leftover, ~ str_c(., collapse = ", "))
+      ) |> 
+      select(
+        姓名 = user_name,
+        性别 = user_sex,
+        生日 = user_dob,
+        补测任务数目 = n,
+        补测任务列表 = games_make_up
+      ) |> 
+      writexl::write_xlsx("makeup/details_leftover.xlsx"),
+    format = "file"
+  ),
+  tar_target(
+    makeup_details_2,
+    makeup_validation |>
+      filter(game_name %in% games_req_kb, used_mouse) |>
+      select(user_id, game_name) |> 
+      chop(game_name)
+  ),
+  tar_target(
+    file_makeup_details_2,
+    makeup_details_2 |>
+      left_join(users, by = "user_id") |>
+      mutate(
+        n = lengths(game_name),
+        games_make_up = map_chr(game_name, ~ str_c(., collapse = ", "))
+      ) |>
+      select(
+        姓名 = user_name,
+        性别 = user_sex,
+        生日 = user_dob,
+        补测任务数目 = n,
+        补测任务列表 = games_make_up
+      ) |>
+      writexl::write_xlsx("makeup/details_2.xlsx"),
+    format = "file"
+  ),
+  tar_target(
+    file_users_makeup_2,
+    makeup_details_2 |>
+      left_join(users, by = "user_id") |>
+      select(姓名 = user_name, 手机号码 = user_phone) |>
+      writexl::write_xlsx("makeup/users_2.xlsx"),
+    format = "file"
+  )
+)
+```
+
 ```{r run-pipeline, include=FALSE}
-# tar_destroy()
-tar_make_future(workers = 8)
+# tar_invalidate(contains("data"))
+tar_make()
 ```
