@@ -76,6 +76,7 @@ list(
       distinct(user_id) |>
       pull(user_id)
   ),
+  tar_target(users_valid, filter(users_existed, !user_id %in% users_obsolete)),
   tarchetypes::tar_file_read(
     user_course_codes,
     "sql/course_codes_tmpl.sql",
@@ -91,14 +92,14 @@ list(
     course_codes_valid,
     bind_rows(
       user_course_codes |>
-        filter(str_detect(项目名称, "认知实验")) |>
-        filter(!user_id %in% users_obsolete) |>
-        select(-user_id),
+        filter(str_detect(项目名称, "认知实验")),
       user_course_codes |>
-        filter(项目名称 == "CAMP-补测专用") |>
-        semi_join(makeup_details, by = "user_id") |>
-        select(-user_id)
-    )
+        filter(项目名称 == "CAMP-补测（键盘）") |>
+        semi_join(makeup_details, by = "user_id"),
+      user_course_codes |>
+        filter(项目名称 == "CAMP-补测（语言）")
+    ) |>
+      inner_join(users_valid, by = "user_id")
   ),
   tar_target(
     file_course_codes,
@@ -107,32 +108,29 @@ list(
   ),
   tar_target(
     users_progress_valid,
-    users_existed |>
-      inner_join(
-        users_progress |>
-          filter(str_detect(project_name, "^认知实验[A-E]$")) |>
-          summarise(
-            n = sum(project_progress) / 100,
-            missed = str_c(
-              project_name[project_progress < 100],
-              collapse = ","
-            ),
-            .by = user_id
-          ),
-        by = "user_id"
-      ) |>
-      filter(!user_id %in% users_obsolete) |>
-      select(
-        批次 = batch,
-        姓名 = user_name,
-        性别 = user_sex,
-        完成比例 = n,
-        缺失的实验 = missed
-      )
+    prepare_progress_data(
+      users_progress, users_valid,
+      pattern = "^认知实验[A-E]$"
+    )
   ),
   tar_target(
     file_progress,
     writexl::write_xlsx(users_progress_valid, "sicnu/progress.xlsx"),
+    format = "file"
+  ),
+  tar_target(
+    users_progress_makeup_lang_valid,
+    prepare_progress_data(
+      users_progress, filter(users_valid, batch == "2303级"),
+      pattern = "CAMP-补测（语言）"
+    )
+  ),
+  tar_target(
+    file_progress_makeup_lang,
+    writexl::write_xlsx(
+      users_progress_makeup_lang_valid,
+      "sicnu/progress_makeup_lang.xlsx"
+    ),
     format = "file"
   )
 )

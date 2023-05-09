@@ -44,4 +44,26 @@ prepare_template_users <- function(users, grade, class, out_dir) {
   file
 }
 
-
+prepare_progress_data <- function(users_progress, users_valid, pattern) {
+  users_valid |>
+    inner_join(
+      users_progress |>
+        filter(str_detect(project_name, pattern)) |>
+        summarise(
+          n = sum(project_progress) / 100,
+          missed = str_c(
+            project_name[project_progress < 100],
+            collapse = ","
+          ),
+          .by = user_id
+        ),
+      by = "user_id"
+    ) |>
+    select(
+      批次 = batch,
+      姓名 = user_name,
+      性别 = user_sex,
+      完成比例 = n,
+      缺失的实验 = missed
+    )
+}
