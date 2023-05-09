@@ -74,7 +74,8 @@ targets_data_makeup2 <- tarchetypes::tar_map(
 ```{targets load-config, include=FALSE}
 list(
   tar_target(file_config, "config.yml", format = "file"),
-  tar_target(games_req_kb, config::get("require_keyboard", file = file_config))
+  tar_target(games_req_kb, config::get("require_keyboard", file = file_config)),
+  tar_target(query_tmpl_progress, fs::path("sql", "progress.tmpl.sql"), format = "file")
 )
 ```
 
@@ -94,10 +95,10 @@ list(
     data_parsed,
     targets_data$data_parsed
   ),
-  tarchetypes::tar_file_read(
+  tarchetypes::tar_age(
     users_project_progress,
-    fs::path("sql", "progress.tmpl.sql"),
-    read = pickup(!!.x, config_where)
+    pickup(query_tmpl_progress, config_where),
+    age = as.difftime(6, units = "days")
   )
 )
 ```
@@ -110,10 +111,10 @@ list(
     data_parsed_makeup,
     targets_data_makeup$data_parsed_makeup
   ),
-  tarchetypes::tar_file_read(
+  tarchetypes::tar_age(
     users_project_progress_makeup,
-    fs::path("sql", "progress.tmpl.sql"),
-    read = pickup(!!.x, config_where_makeup)
+    pickup(query_tmpl_progress, config_where_makeup),
+    age = as.difftime(6, units = "days")
   )
 )
 ```
@@ -126,10 +127,10 @@ list(
     data_parsed_makeup2,
     targets_data_makeup2$data_parsed_makeup2
   ),
-  tarchetypes::tar_file_read(
+  tarchetypes::tar_age(
     users_project_progress_makeup2,
-    fs::path("sql", "progress.tmpl.sql"),
-    read = pickup(!!.x, config_where_makeup2)
+    pickup(query_tmpl_progress, config_where_makeup2),
+    age = as.difftime(6, units = "days")
   )
 )
 ```
