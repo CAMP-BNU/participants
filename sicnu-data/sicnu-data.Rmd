@@ -187,7 +187,6 @@ list(
   tar_target(
     makeup_validation,
     data_parsed_makeup |>
-      filter(course_name == "CAMP-补测专用") |> 
       filter(game_time == max(game_time), .by = c(user_id, game_id)) |>
       mutate(
         used_mouse = map2_lgl(
