@@ -94,8 +94,7 @@ list(
       user_course_codes |>
         filter(str_detect(项目名称, "认知实验")),
       user_course_codes |>
-        filter(项目名称 == "CAMP-补测（键盘）") |>
-        semi_join(makeup_details, by = "user_id"),
+        filter(项目名称 == "CAMP-补测（键盘）"),
       user_course_codes |>
         filter(项目名称 == "CAMP-补测（语言）")
     ) |>
