@@ -50,3 +50,12 @@ makeup2:
   - table: project_course_config
     field: Name
     values: CAMP-补测（键盘）2
+
+makeup3:
+  where:
+  - table: v_organizationuser
+    field: OrganizationName
+    values: 四川师范大学
+  - table: project_course_config
+    field: Name
+    values: CAMP-补测（语言）

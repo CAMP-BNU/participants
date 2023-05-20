@@ -98,7 +98,7 @@ list(
   tarchetypes::tar_age(
     users_project_progress,
     pickup(query_tmpl_progress, config_where),
-    age = as.difftime(6, units = "days")
+    age = as.difftime(3, units = "hours")
   )
 )
 ```
@@ -114,7 +114,7 @@ list(
   tarchetypes::tar_age(
     users_project_progress_makeup,
     pickup(query_tmpl_progress, config_where_makeup),
-    age = as.difftime(6, units = "days")
+    age = as.difftime(3, units = "hours")
   )
 )
 ```
@@ -130,7 +130,7 @@ list(
   tarchetypes::tar_age(
     users_project_progress_makeup2,
     pickup(query_tmpl_progress, config_where_makeup2),
-    age = as.difftime(6, units = "days")
+    age = as.difftime(3, units = "hours")
   )
 )
 ```
@@ -162,12 +162,14 @@ list(
         games_make_up = map_chr(game_name, ~ str_c(., collapse = ", "))
       ) |> 
       select(
+        批次 = grade,
         姓名 = user_name,
         性别 = user_sex,
         生日 = user_dob,
         补测任务数目 = n,
         补测任务列表 = games_make_up
       ) |> 
+      split(~ 批次) |> 
       writexl::write_xlsx("makeup/details.xlsx"),
     format = "file"
   ),
@@ -211,18 +213,24 @@ list(
     file_details_leftover,
     makeup_completion |> 
       filter(lengths(leftover) > 0) |> 
+      anti_join(
+        makeup_completion2 |> filter(lengths(leftover) == 0), 
+        by = "user_id"
+      ) |> 
       left_join(users, by = "user_id") |>
       mutate(
         n = lengths(leftover),
         games_make_up = map_chr(leftover, ~ str_c(., collapse = ", "))
       ) |> 
       select(
+        批次 = grade,
         姓名 = user_name,
         性别 = user_sex,
         生日 = user_dob,
         补测任务数目 = n,
         补测任务列表 = games_make_up
       ) |> 
+      split(~ 批次) |> 
       writexl::write_xlsx("makeup/details_leftover.xlsx"),
     format = "file"
   ),
@@ -242,12 +250,14 @@ list(
         games_make_up = map_chr(game_name, ~ str_c(., collapse = ", "))
       ) |>
       select(
+        批次 = grade,
         姓名 = user_name,
         性别 = user_sex,
         生日 = user_dob,
         补测任务数目 = n,
         补测任务列表 = games_make_up
       ) |>
+      split(~ 批次) |> 
       writexl::write_xlsx("makeup/details_2.xlsx"),
     format = "file"
   ),
@@ -262,7 +272,57 @@ list(
 )
 ```
 
+```{targets check-makeup-2, include=FALSE}
+list(
+  tar_target(
+    makeup_validation2,
+    data_parsed_makeup2 |>
+      filter(game_time == max(game_time), .by = c(user_id, game_id)) |>
+      mutate(
+        used_mouse = map2_lgl(
+          raw_parsed, game_name,
+          check_used_mouse
+        )
+      )
+  ),
+  tar_target(
+    makeup_completion2,
+    makeup_validation2 |> 
+      filter(game_name %in% games_req_kb & !used_mouse) |> 
+      select(user_id, game_name_makeup = game_name) |> 
+      chop(game_name_makeup) |> 
+      full_join(makeup_details_2, by = "user_id") |> 
+      mutate(
+        leftover = map2(game_name, game_name_makeup, setdiff),
+        .keep = "unused"
+      )
+  ),
+  tar_target(
+    file_details_2_leftover,
+    makeup_completion2 |> 
+      filter(lengths(leftover) > 0) |> 
+      left_join(users, by = "user_id") |>
+      mutate(
+        n = lengths(leftover),
+        games_make_up = map_chr(leftover, ~ str_c(., collapse = ", "))
+      ) |> 
+      select(
+        批次 = grade,
+        姓名 = user_name,
+        性别 = user_sex,
+        生日 = user_dob,
+        补测任务数目 = n,
+        补测任务列表 = games_make_up
+      ) |> 
+      split(~ 批次) |> 
+      writexl::write_xlsx("makeup/details_2_leftover.xlsx"),
+    format = "file"
+  )
+)
+```
+
 ```{r run-pipeline, include=FALSE}
+# tar_invalidate(users)
 # tar_invalidate(contains("data"))
 tar_make()
 ```
