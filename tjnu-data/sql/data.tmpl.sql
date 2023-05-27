@@ -1,6 +1,5 @@
 SELECT DISTINCT
 	v_organizationuser.OrganizationUserId user_id,
-	project_course_config.`Name` project_name,
 	course.`Name` course_name,
 	content.Id game_id,
 	content.`Name` game_name,

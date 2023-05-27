@@ -69,6 +69,7 @@ list(
       filter(str_detect(project_name, "弃"), project_progress > 0) |>
       pull(user_id)
   ),
+  tar_target(users_valid, filter(users_existed, !user_id %in% users_obsolete)),
   tarchetypes::tar_file_read(
     user_course_codes,
     "sql/course_codes_tmpl.sql",
@@ -77,10 +78,15 @@ list(
   ),
   tar_target(
     course_codes_valid,
-    user_course_codes |>
-      filter(!str_detect(项目名称, "弃"), str_detect(项目名称, "认知实验")) |>
-      filter(!user_id %in% users_obsolete) |>
-      select(-user_id)
+    bind_rows(
+      user_course_codes |>
+        filter(!str_detect(项目名称, "弃"), str_detect(项目名称, "认知实验")),
+      user_course_codes |>
+        filter(项目名称 == "CAMP-补测（键盘）"),
+      user_course_codes |>
+        filter(项目名称 == "CAMP-补测（语言）")
+    ) |>
+      inner_join(users_valid, by = "user_id")
   ),
   tar_target(
     file_course_codes,
@@ -89,28 +95,10 @@ list(
   ),
   tar_target(
     users_progress_valid,
-    users_existed |>
-      inner_join(
-        users_progress |>
-          filter(str_detect(project_name, "^认知实验[A-E]$")) |>
-          summarise(
-            n = sum(project_progress) / 100,
-            missed = str_c(
-              project_name[project_progress < 100],
-              collapse = ","
-            ),
-            .by = user_id
-          ),
-        by = "user_id"
-      ) |>
-      filter(!user_id %in% users_obsolete) |>
-      select(
-        姓名 = user_name,
-        性别 = user_sex,
-        生日 = user_dob,
-        完成比例 = n,
-        缺失的实验 = missed
-      )
+    prepare_progress_data(
+      users_progress, users_valid,
+      pattern = "^认知实验[A-E]$"
+    )
   ),
   tar_target(
     file_progress,

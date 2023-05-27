@@ -1,20 +1,61 @@
 default:
-  # put all the required where filters here
+  require_keyboard:
+  - 语义判断
+  - 声调判断
+  - 词语判断
+  - 变色魔块PRO
+  - 卡片分类PRO
+  - 快速归类PRO
+  - 一心二用PRO
+  - 太空飞船PRO
+  - 候鸟迁徙PRO
+  - 多变计数师
+  - 随机应变
+  - 多彩文字PRO
+  - 数字卡片PRO
+  - 美术卡片
+  - 格子卡片
+  - 文字卡片
+  - 专注大师_中级
+  - 魔术师终极
+  - 察颜观色PRO
+  - 注意警觉
+  - 注意指向
+  - 方向检测
+  - 色彩检测
+
+base:
   where:
-    # examples (you should make sure these filters are valid):
-    # - table: course
-    #   field: Name
-    #   operator: REGEXP
-    #   values: .*
-    # - table: content
-    #   field: Name
-    # # operator of `=` or `IN` can be neglected
-    #   values:
-    #   - 萤火虫
-    #   - 超级秒表
     - table: v_organizationuser
       field: OrganizationName
       values: 天津师范大学
     - table: course
       field: Name
       values: [认知实验A, 认知实验B, 认知实验C, 认知实验D, 认知实验E]
+
+makeup:
+  where:
+  - table: v_organizationuser
+    field: OrganizationName
+    values: 天津师范大学
+  - table: project_course_config
+    field: Name
+    values: CAMP-补测（键盘）
+
+makeup2:
+  where:
+  - table: v_organizationuser
+    field: OrganizationName
+    values: 天津师范大学
+  - table: project_course_config
+    field: Name
+    values: CAMP-补测（键盘）2
+
+makeup3:
+  where:
+  - table: v_organizationuser
+    field: OrganizationName
+    values: 天津师范大学
+  - table: project_course_config
+    field: Name
+    values: CAMP-补测（语言）
