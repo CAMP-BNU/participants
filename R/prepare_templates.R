@@ -63,6 +63,7 @@ prepare_progress_data <- function(users_progress, users_valid, pattern) {
       批次 = batch,
       姓名 = user_name,
       性别 = user_sex,
+      生日 = user_dob,
       完成比例 = n,
       缺失的实验 = missed
     )
