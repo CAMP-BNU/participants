@@ -137,6 +137,17 @@ list(
 )
 ```
 
+```{targets data-makeup-3, include=FALSE}
+list(
+  tar_target(config_where_makeup3, config::get("where", file = file_config, config = "makeup3")),
+  tarchetypes::tar_age(
+    users_project_progress_makeup3,
+    pickup(query_tmpl_progress, config_where_makeup3),
+    age = as.difftime(3, units = "hours")
+  )
+)
+```
+
 ```{targets prepare-makup, include=FALSE}
 list(
   tar_target(
@@ -346,9 +357,34 @@ list(
 )
 ```
 
+```{targets check-makeup-3, include=FALSE}
+list(
+  tar_target(
+    makeup_lang_leftover,
+    makeup_lang |> 
+      anti_join(
+        filter(users_project_progress_makeup3, project_progress == 100),
+        by = "user_id"
+      )
+  ),
+  tar_target(
+    file_user_makeup_lang_leftover,
+    makeup_lang_leftover |>
+      left_join(users, by = "user_id")  |>
+      select(
+        姓名 = user_name,
+        性别 = user_sex,
+        生日 = user_dob
+      )  |>
+      writexl::write_xlsx("makeup/users_lang_leftover.xlsx"),
+    format = "file"
+  )
+)
+```
+
 ```{r run-pipeline, include=FALSE}
 # tar_invalidate(users_project_progress)
 # tar_invalidate(contains("data"))
 # tar_visnetwork(targets_only = TRUE, level_separation = 500)
-tar_make()
+tar_make_future(workers = 8)
 ```

@@ -1,6 +1,7 @@
 library(targets)
 tar_option_set(
-  packages = c("tidyverse", "bit64", "tarflow.iquizoo", "openxlsx")
+  packages = c("tidyverse", "bit64", "tarflow.iquizoo", "openxlsx"),
+  controller = crew::crew_controller_local(workers = 8)
 )
 tar_source()
 # used by `str_glue()`, might not be best practice
@@ -83,6 +84,13 @@ list(
         filter(!str_detect(项目名称, "弃"), str_detect(项目名称, "认知实验")),
       user_course_codes |>
         filter(项目名称 == "CAMP-补测（键盘）"),
+      user_course_codes |>
+        filter(项目名称 == "CAMP-补测（键盘）2") |>
+        semi_join(
+          targets::tar_read(makeup_completion2, store = "tjnu-data/_targets") |>
+            filter(lengths(leftover) > 0),
+          by = "user_id"
+        ),
       user_course_codes |>
         filter(项目名称 == "CAMP-补测（语言）")
     ) |>
