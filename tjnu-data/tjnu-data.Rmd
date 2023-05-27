@@ -257,7 +257,6 @@ list(
         补测任务数目 = n,
         补测任务列表 = games_make_up
       ) |>
-      split(~ 批次) |>
       writexl::write_xlsx("makeup/details_leftover.xlsx"),
     format = "file"
   ),
@@ -340,8 +339,7 @@ list(
         生日 = user_dob,
         补测任务数目 = n,
         补测任务列表 = games_make_up
-      ) |>
-      split(~ 批次) |>
+      ) |> 
       writexl::write_xlsx("makeup/details_2_leftover.xlsx"),
     format = "file"
   )
