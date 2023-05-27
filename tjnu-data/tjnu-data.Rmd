@@ -26,7 +26,8 @@ search_games_mem <- memoise::memoise(
 )
 tar_option_set(
   package = c("tidyverse", "tarflow.iquizoo", "preproc.iquizoo"),
-  format = "qs"
+  format = "qs",
+  controller = crew::crew_controller_local(workers = 8)
 )
 
 games <- search_games_mem(config_where = config::get("where", config = "base"))
@@ -351,5 +352,5 @@ list(
 # tar_invalidate(users_project_progress)
 # tar_invalidate(contains("data"))
 # tar_visnetwork(targets_only = TRUE, level_separation = 500)
-tar_make_future(workers = 8)
+tar_make()
 ```
