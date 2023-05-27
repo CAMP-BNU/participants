@@ -14,6 +14,7 @@ knit: (function(input, ...) {
 ```{r setup, include=FALSE}
 library(targets)
 knitr::opts_chunk$set(echo = TRUE, tar_interactive = FALSE)
+tar_unscript()
 ```
 
 ```{targets set-globals, tar_globals=TRUE, include=FALSE}
@@ -74,9 +75,9 @@ targets_data_makeup2 <- tarchetypes::tar_map(
 ```{targets load-config, include=FALSE}
 list(
   tar_target(file_config, "config.yml", format = "file"),
-  tar_target(config_where, config::get("where", file = file_config)),
   tar_target(games_req_kb, config::get("require_keyboard")),
-  tar_target(query_tmpl_progress, fs::path("sql", "progress.tmpl.sql"), format = "file")
+  tar_target(query_tmpl_progress, fs::path("sql", "progress.tmpl.sql"), format = "file"),
+  tar_target(query_tmpl_data, fs::path("sql", "data.tmpl.sql"), format = "file")
 )
 ```
 
@@ -87,10 +88,9 @@ list(
 )
 ```
 
-```{targets data-and-scores, include=FALSE}
+```{targets data-base, include=FALSE}
 list(
-  tar_target(query_tmpl_scores, fs::path("sql", "scores.tmpl.sql"), format = "file"),
-  tar_target(query_tmpl_data, fs::path("sql", "data.tmpl.sql"), format = "file"),
+  tar_target(config_where, config::get("where", file = file_config, config = "base")),
   targets_data,
   tarchetypes::tar_combine(
     data_parsed,
@@ -99,7 +99,7 @@ list(
   tarchetypes::tar_age(
     users_project_progress,
     pickup(query_tmpl_progress, config_where),
-    age = as.difftime(1, units = "days")
+    age = as.difftime(3, units = "hours")
   )
 )
 ```
